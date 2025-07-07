@@ -117,6 +117,33 @@ app.get('/users/:id/address', async (req, res) => {
     }
 });
 
+app.get('/users/:id/details', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                u.id, u.username, u.email, u.created_at,
+                a.city, a.country, a.street, a.pincode, a.created_at AS address_created_at
+            FROM users u
+            INNER JOIN addresses a ON u.id = a.user_id
+            WHERE u.id = $1
+        `;
+
+        const result = await client.query(query, [id]);
+
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).json({ error: 'User or address not found' });
+        }
+    } catch (err) {
+        console.error('Error fetching user details with address:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
 
 const client = new Client({
     connectionString: process.env.DATABASE_URL
